@@ -5,6 +5,8 @@
 This library provides a [`RawBTree`] type that can be used as a basis for
 any B-Tree-based data structure.
 
+[`RawBTree`]: https://docs.rs/raw-btree/latest/raw_btree/struct.RawBTree.html
+
 <!-- cargo-rdme end -->
 
 ## License
