@@ -2,9 +2,17 @@
 name = "raw-btree"
 version = "0.1.0"
 edition = "2021"
+authors = ["Timothée Haudebourg <author@haudebourg.net>"]
+description = "Generic B-Tree implementation."
+categories = ["data-structures"]
+keywords = ["raw", "btree"]
+repository = "https://github.com/timothee-haudebourg/raw-btree-rs"
+documentation = "https://docs.rs/raw-btree"
+license = "MIT/Apache-2.0"
+readme = "README.md"
 
 [features]
-default = ["dot"]
+default = []
 dot = []
 
 [dev-dependencies]

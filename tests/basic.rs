@@ -34,12 +34,7 @@ pub fn remove() {
 	items.shuffle(&mut rng);
 
 	for (i, (key, value)) in items.iter().enumerate() {
-		eprintln!("removing {key}");
 		let item = btree.remove(Item::key_cmp, &key);
-		if item.is_none() || btree.len() != 99 - i {
-			let mut file = std::fs::File::create("test.dot").unwrap();
-			btree.dot_write(&mut file).unwrap();
-		}
 		assert_eq!(item, Some(Item::new(*key, *value)));
 		assert_eq!(btree.len(), 99 - i);
 		btree.validate(Item::cmp);

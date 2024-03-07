@@ -1,6 +1,5 @@
-//! Raw BTree implementation.
-//!
-//! Can be used as a basis for any BTree-based data structure.
+//! This library provides a [`RawBTree`] type that can be used as a basis for
+//! any B-Tree-based data structure.
 pub(crate) mod utils;
 
 pub mod node;
@@ -212,7 +211,6 @@ impl<T, S: Storage<T>> RawBTree<T, S> {
 	pub fn remove<Q: ?Sized>(&mut self, cmp: impl Fn(&T, &Q) -> Ordering, key: &Q) -> Option<T> {
 		match self.address_of(cmp, key) {
 			Ok(addr) => {
-				eprintln!("found it: {addr:?}");
 				let r = unsafe { self.nodes.remove_at(self.root, addr).unwrap() };
 				self.root = r.new_root;
 				self.len -= 1;

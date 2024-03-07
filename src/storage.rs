@@ -349,11 +349,7 @@ pub trait Storage<T>: Default {
 		loop {
 			match self.get(id).offset_of(&cmp, key) {
 				Ok(offset) => return Ok(Address { node: id, offset }),
-				Err((offset, None)) => {
-					let addr = Address::new(id, offset.into());
-					eprintln!("insert at {addr:?}");
-					return Err(addr);
-				}
+				Err((offset, None)) => return Err(Address::new(id, offset.into())),
 				Err((_, Some(child_id))) => {
 					id = child_id;
 				}
