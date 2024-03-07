@@ -1,6 +1,6 @@
 //! This library provides a [`RawBTree`] type that can be used as a basis for
 //! any B-Tree-based data structure.
-//! 
+//!
 //! [`RawBTree`]: crate::RawBTree
 pub(crate) mod utils;
 
