@@ -366,7 +366,7 @@ impl<T, S: Storage<T>> Drop for RawBTree<T, S> {
 	}
 }
 
-pub struct Iter<'a, T, S: Storage<T>> {
+pub struct Iter<'a, T, S: Storage<T> = BoxStorage> {
 	/// The tree reference.
 	btree: &'a RawBTree<T, S>,
 
@@ -456,7 +456,7 @@ impl<'a, T, S: Storage<T>> IntoIterator for &'a RawBTree<T, S> {
 	}
 }
 
-pub struct IterMut<'a, T, S: Storage<T>> {
+pub struct IterMut<'a, T, S: Storage<T> = BoxStorage> {
 	/// The tree reference.
 	btree: &'a mut RawBTree<T, S>,
 
@@ -542,7 +542,7 @@ impl<'a, T, S: Storage<T>> IntoIterator for &'a mut RawBTree<T, S> {
 	}
 }
 
-pub struct IntoIter<T, S: Storage<T>> {
+pub struct IntoIter<T, S: Storage<T> = BoxStorage> {
 	/// The tree.
 	btree: RawBTree<T, S>,
 
