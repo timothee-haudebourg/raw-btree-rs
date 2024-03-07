@@ -1,0 +1,11 @@
+[package]
+name = "raw-btree"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["dot"]
+dot = []
+
+[dev-dependencies]
+rand = { version = "0.8.5", features = ["small_rng"] }
