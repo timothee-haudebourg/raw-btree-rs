@@ -489,6 +489,14 @@ impl<'a, T, S: Storage<T>> DoubleEndedIterator for Iter<'a, T, S> {
 	}
 }
 
+impl<'a, T, S: Storage<T>> Clone for Iter<'a, T, S> {
+	fn clone(&self) -> Self {
+		*self
+	}
+}
+
+impl<'a, T, S: Storage<T>> Copy for Iter<'a, T, S> {}
+
 impl<'a, T, S: Storage<T>> IntoIterator for &'a RawBTree<T, S> {
 	type IntoIter = Iter<'a, T, S>;
 	type Item = &'a T;
