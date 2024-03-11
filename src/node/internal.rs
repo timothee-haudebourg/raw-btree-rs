@@ -61,6 +61,18 @@ pub struct Internal<T, S: Storage<T>> {
 }
 
 impl<T, S: Storage<T>> Internal<T, S> {
+	pub fn new(
+		parent: Option<S::Node>,
+		first_child: S::Node,
+		other_children: Array<Branch<T, S>, M>,
+	) -> Self {
+		Self {
+			parent,
+			first_child,
+			other_children,
+		}
+	}
+
 	/// Creates a binary node (with a single item and two children).
 	#[inline]
 	pub fn binary(

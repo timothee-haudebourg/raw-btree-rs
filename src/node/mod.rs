@@ -165,7 +165,7 @@ impl<T, S: Storage<T>> Node<T, S> {
 
 	#[inline]
 	pub fn leaf(parent: Option<S::Node>, item: T) -> Self {
-		Node::Leaf(LeafNode::new(parent, item))
+		Node::Leaf(LeafNode::from_item(parent, item))
 	}
 
 	#[inline]

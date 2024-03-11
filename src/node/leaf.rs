@@ -14,8 +14,12 @@ pub struct Leaf<T, S: Storage<T>> {
 }
 
 impl<T, S: Storage<T>> Leaf<T, S> {
+	pub fn new(parent: Option<S::Node>, items: Array<T, { M + 1 }>) -> Self {
+		Self { parent, items }
+	}
+
 	#[inline]
-	pub fn new(parent: Option<S::Node>, item: T) -> Leaf<T, S> {
+	pub fn from_item(parent: Option<S::Node>, item: T) -> Leaf<T, S> {
 		let mut items = Array::new();
 		items.push(item);
 
@@ -43,8 +47,8 @@ impl<T, S: Storage<T>> Leaf<T, S> {
 	}
 
 	#[inline]
-	pub fn items(&self) -> &[T] {
-		self.items.as_ref()
+	pub fn items(&self) -> &Array<T, { M + 1 }> {
+		&self.items
 	}
 
 	#[inline]

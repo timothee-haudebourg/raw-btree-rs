@@ -16,12 +16,13 @@ pub use item::Item;
 use storage::BoxStorage;
 pub use storage::Storage;
 
+use crate::utils::Array;
+
 /// Knuth order of the B-Trees.
 ///
 /// Must be at least 4.
 pub const M: usize = 8;
 
-#[derive(Clone)]
 pub struct RawBTree<T, S: Storage<T> = BoxStorage> {
 	/// Allocated and free nodes.
 	nodes: S,
@@ -362,6 +363,48 @@ impl<T, S: Storage<T>> Drop for RawBTree<T, S> {
 		use storage::Dropper;
 		if let Some(mut dropper) = self.nodes.start_dropping() {
 			self.visit_from_leaves(|id| unsafe { dropper.drop_node(id) })
+		}
+	}
+}
+
+impl<T: Clone, S: Storage<T>> Clone for RawBTree<T, S> {
+	fn clone(&self) -> Self {
+		unsafe fn clone_node<T: Clone, S: Storage<T>>(
+			old_nodes: &S,
+			new_nodes: &mut S,
+			parent: Option<S::Node>,
+			node_id: S::Node,
+		) -> S::Node {
+			let clone = match old_nodes.get(node_id) {
+				Node::Leaf(node) => Node::Leaf(node::LeafNode::new(parent, node.items().clone())),
+				Node::Internal(node) => {
+					let first = node.first_child_id();
+					let mut branches = Array::new();
+
+					for b in node.branches() {
+						branches.push(node::internal::Branch {
+							item: b.item.clone(),
+							child: clone_node(old_nodes, new_nodes, None, b.child),
+						})
+					}
+
+					Node::Internal(node::InternalNode::new(parent, first, branches))
+				}
+			};
+
+			new_nodes.insert_node(clone)
+		}
+
+		let mut nodes = S::default();
+		let root = self
+			.root
+			.map(|root| unsafe { clone_node(&self.nodes, &mut nodes, None, root) });
+
+		Self {
+			nodes,
+			root,
+			len: self.len,
+			item: PhantomData,
 		}
 	}
 }
