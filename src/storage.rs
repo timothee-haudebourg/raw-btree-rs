@@ -5,7 +5,7 @@ use crate::{
 	Node, M,
 };
 use core::fmt;
-use std::cmp::Ordering;
+use std::{cmp::Ordering, ptr::NonNull};
 
 pub trait Storage<T>: Default {
 	/// Node.
@@ -486,20 +486,23 @@ pub trait Dropper<T, S: Storage<T>>: Sized {
 #[derive(Default)]
 pub struct BoxStorage;
 
-pub struct BoxPtr<T, S: Storage<T>>(*mut Node<T, S>);
+pub struct BoxPtr<T>(NonNull<Node<T, BoxStorage>>); // TODO use `core::ptr::Unique` when it is stable.
+
+unsafe impl<T: Send> Send for BoxPtr<T> {}
+unsafe impl<T: Sync> Sync for BoxPtr<T> {}
 
 impl<T> Storage<T> for BoxStorage {
-	type Node = BoxPtr<T, Self>;
+	type Node = BoxPtr<T>;
 
 	type Dropper = BoxDrop;
 
 	fn allocate_node(&mut self, node: Node<T, Self>) -> Self::Node {
 		let b = Box::new(node);
-		BoxPtr(Box::into_raw(b))
+		BoxPtr(NonNull::new(Box::into_raw(b)).unwrap())
 	}
 
 	unsafe fn release_node(&mut self, id: Self::Node) -> Node<T, Self> {
-		let b = Box::from_raw(id.0);
+		let b = Box::from_raw(id.0.as_ptr());
 		*b
 	}
 
@@ -508,46 +511,46 @@ impl<T> Storage<T> for BoxStorage {
 	}
 
 	unsafe fn get(&self, id: Self::Node) -> &Node<T, Self> {
-		&*id.0
+		&*id.0.as_ptr()
 	}
 
 	unsafe fn get_mut(&mut self, id: Self::Node) -> &mut Node<T, Self> {
-		&mut *id.0
+		&mut *id.0.as_ptr()
 	}
 }
 
-impl<T, S: Storage<T>> fmt::Debug for BoxPtr<T, S> {
+impl<T> fmt::Debug for BoxPtr<T> {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		self.0.fmt(f)
 	}
 }
 
-impl<T, S: Storage<T>> Clone for BoxPtr<T, S> {
+impl<T> Clone for BoxPtr<T> {
 	fn clone(&self) -> Self {
 		*self
 	}
 }
 
-impl<T, S: Storage<T>> Copy for BoxPtr<T, S> {}
+impl<T> Copy for BoxPtr<T> {}
 
-impl<T, S: Storage<T>> PartialEq for BoxPtr<T, S> {
+impl<T> PartialEq for BoxPtr<T> {
 	fn eq(&self, other: &Self) -> bool {
 		self.0 == other.0
 	}
 }
 
-impl<T, S: Storage<T>> Eq for BoxPtr<T, S> {}
+impl<T> Eq for BoxPtr<T> {}
 
-impl<T, S: Storage<T>> From<BoxPtr<T, S>> for usize {
-	fn from(value: BoxPtr<T, S>) -> Self {
-		value.0 as usize
+impl<T> From<BoxPtr<T>> for usize {
+	fn from(value: BoxPtr<T>) -> Self {
+		value.0.as_ptr() as usize
 	}
 }
 
 pub struct BoxDrop;
 
 impl<T> Dropper<T, BoxStorage> for BoxDrop {
-	unsafe fn drop_node(&mut self, id: BoxPtr<T, BoxStorage>) {
-		let _ = Box::from_raw(id.0);
+	unsafe fn drop_node(&mut self, id: BoxPtr<T>) {
+		let _ = Box::from_raw(id.0.as_ptr());
 	}
 }
