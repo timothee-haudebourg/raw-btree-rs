@@ -7,6 +7,25 @@ use crate::{
 use core::fmt;
 use std::{cmp::Ordering, ptr::NonNull};
 
+/// BTree node storage.
+///
+/// # Safety
+///
+/// An *active* identifier is a node identifier (`Self::Node`) that has been
+/// created using `allocate_node` (or `insert_node`) but not yet released using
+/// `release_node` or a `Dropper` (created with `start_dropping`).
+///
+/// - Default method implementations must not be overridden by the implementor.
+/// - `allocate_node` must not return an *active* identifier.
+///   Once returned and until released using `release_node`, this identifier
+///   must always map to the same node through `get` and `get_mut`.
+///   We say that the identifier and node are "bound" together by the storage.
+///   The created node must live at least as long as its identifier is active
+///   and the storage is not dropped.
+/// - `release_node` may only drop the node bound to the given identifier.
+/// - `start_dropping` creates a dropper for this storage.
+/// - `get` must return the node bound to the given identifier.
+/// - `get_mut` must return the node bound to the given identifier.
 pub unsafe trait Storage<T>: Default {
 	/// Node.
 	type Node: Copy + PartialEq + core::fmt::Debug;
@@ -16,21 +35,6 @@ pub unsafe trait Storage<T>: Default {
 
 	/// Allocates the given node.
 	fn allocate_node(&mut self, node: Node<T, Self>) -> Self::Node;
-
-	/// Inserts the given node into the storage, setting the children parent.
-	///
-	/// # Safety
-	///
-	/// The input node's children must not have been deallocated.
-	unsafe fn insert_node(&mut self, node: Node<T, Self>) -> Self::Node {
-		let children: Array<Self::Node, M> = node.children().collect();
-		let id = self.allocate_node(node);
-		for child_id in children {
-			self.get_mut(child_id).set_parent(Some(id));
-		}
-
-		id
-	}
 
 	/// # Safety
 	///
@@ -55,6 +59,21 @@ pub unsafe trait Storage<T>: Default {
 	/// - Must not be used to create more than one concurrent mutable reference
 	///   to the same node.
 	unsafe fn get_mut(&mut self, id: Self::Node) -> &mut Node<T, Self>;
+
+	/// Inserts the given node into the storage, setting the children parent.
+	///
+	/// # Safety
+	///
+	/// The input node's children must not have been deallocated.
+	unsafe fn insert_node(&mut self, node: Node<T, Self>) -> Self::Node {
+		let children: Array<Self::Node, M> = node.children().collect();
+		let id = self.allocate_node(node);
+		for child_id in children {
+			self.get_mut(child_id).set_parent(Some(id));
+		}
+
+		id
+	}
 
 	/// Normalizes the given address.
 	///
@@ -472,7 +491,11 @@ pub struct RemovedItem<T, S: Storage<T>> {
 /// Storage dropper.
 ///
 /// Used to drop all the nodes of a node storage.
-pub trait Dropper<T, S: Storage<T>>: Sized {
+///
+/// # Safety
+///
+/// `drop_node` may only drop the node bound to the given identifier.
+pub unsafe trait Dropper<T, S: Storage<T>>: Sized {
 	/// Drops the given node.
 	///
 	/// # Safety
@@ -549,7 +572,7 @@ impl<T> From<BoxPtr<T>> for usize {
 
 pub struct BoxDrop;
 
-impl<T> Dropper<T, BoxStorage> for BoxDrop {
+unsafe impl<T> Dropper<T, BoxStorage> for BoxDrop {
 	unsafe fn drop_node(&mut self, id: BoxPtr<T>) {
 		let _ = Box::from_raw(id.0.as_ptr());
 	}
