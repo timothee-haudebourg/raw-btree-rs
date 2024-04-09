@@ -7,7 +7,7 @@ use crate::{
 use core::fmt;
 use std::{cmp::Ordering, ptr::NonNull};
 
-pub trait Storage<T>: Default {
+pub unsafe trait Storage<T>: Default {
 	/// Node.
 	type Node: Copy + PartialEq + core::fmt::Debug;
 
@@ -491,7 +491,7 @@ pub struct BoxPtr<T>(NonNull<Node<T, BoxStorage>>); // TODO use `core::ptr::Uniq
 unsafe impl<T: Send> Send for BoxPtr<T> {}
 unsafe impl<T: Sync> Sync for BoxPtr<T> {}
 
-impl<T> Storage<T> for BoxStorage {
+unsafe impl<T> Storage<T> for BoxStorage {
 	type Node = BoxPtr<T>;
 
 	type Dropper = BoxDrop;
