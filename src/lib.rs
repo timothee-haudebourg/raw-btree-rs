@@ -546,7 +546,9 @@ impl<'a, T, S: Storage<T>> Iterator for IterMut<'a, T, S> {
 				if self.len > 0 {
 					self.len -= 1;
 					self.addr = self.btree.nodes.next_item_address(addr);
-					Some(std::mem::transmute(self.btree.get_mut_at(addr).unwrap()))
+					Some(std::mem::transmute::<&mut T, &'a mut T>(
+						self.btree.get_mut_at(addr).unwrap(),
+					))
 				} else {
 					None
 				}
@@ -571,7 +573,9 @@ impl<'a, T, S: Storage<T>> DoubleEndedIterator for IterMut<'a, T, S> {
 
 				self.len -= 1;
 				self.end = Some(addr);
-				Some(std::mem::transmute(self.btree.get_mut_at(addr).unwrap()))
+				Some(std::mem::transmute::<&mut T, &'a mut T>(
+					self.btree.get_mut_at(addr).unwrap(),
+				))
 			}
 		} else {
 			None

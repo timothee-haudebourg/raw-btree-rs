@@ -49,7 +49,7 @@ pub fn clone() {
 	for (key, value) in &ITEMS {
 		btree.insert(Item::cmp, Item::new(*key, *value));
 	}
-	
+
 	let cloned = btree.clone();
 	std::mem::drop(btree);
 	cloned.validate(Item::cmp);
