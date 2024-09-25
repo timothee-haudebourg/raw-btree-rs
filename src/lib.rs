@@ -360,10 +360,7 @@ impl<T, S: Storage<T>> RawBTree<T, S> {
 
 impl<T, S: Storage<T>> Drop for RawBTree<T, S> {
 	fn drop(&mut self) {
-		use storage::Dropper;
-		if let Some(mut dropper) = self.nodes.start_dropping() {
-			self.visit_from_leaves(|id| unsafe { dropper.drop_node(id) })
-		}
+		self.clear();
 	}
 }
 
@@ -378,9 +375,8 @@ impl<T: Clone, S: Storage<T>> Clone for RawBTree<T, S> {
 			let clone = match old_nodes.get(node_id) {
 				Node::Leaf(node) => Node::Leaf(node::LeafNode::new(parent, node.items().clone())),
 				Node::Internal(node) => {
-					let first = node.first_child_id();
+					let first = clone_node(old_nodes, new_nodes, None, node.first_child_id());
 					let mut branches = Array::new();
-
 					for b in node.branches() {
 						branches.push(node::internal::Branch {
 							item: b.item.clone(),

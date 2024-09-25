@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, cmp::Ordering};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Item<K, V> {
 	pub key: K,
 	pub value: V,
