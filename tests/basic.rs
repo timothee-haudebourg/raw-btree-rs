@@ -43,6 +43,18 @@ pub fn remove() {
 	assert!(btree.is_empty())
 }
 
+#[test]
+pub fn clone() {
+	let mut btree: RawBTree<Item<usize, usize>> = RawBTree::new();
+	for (key, value) in &ITEMS {
+		btree.insert(Item::cmp, Item::new(*key, *value));
+	}
+
+	let cloned = btree.clone();
+	std::mem::drop(btree);
+	cloned.validate(Item::cmp);
+}
+
 // #[test]
 // pub fn item_addresses() {
 // 	let mut btree: RawBTreeMap<usize, usize> = RawBTreeMap::new();

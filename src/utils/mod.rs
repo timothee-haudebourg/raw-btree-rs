@@ -3,15 +3,6 @@ use std::cmp::Ordering;
 
 pub use array::Array;
 
-/// Type identifier by a key.
-///
-/// This is implemented by [`Item`] and [`internal::Branch`].
-pub trait Keyed {
-	type Key;
-
-	fn key(&self) -> &Self::Key;
-}
-
 /// Search in `sorted_slice` for the item with the nearest key smaller or equal to the given one.
 ///
 /// `sorted_slice` is assumed to be sorted.
