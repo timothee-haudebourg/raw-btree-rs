@@ -229,11 +229,11 @@ impl<T, S: Storage<T>> RawBTree<T, S> {
 	///
 	/// Target node must not have been deallocated.
 	#[inline]
-	pub unsafe fn remove_at<Q: ?Sized>(&mut self, addr: Address<S::Node>) -> T {
-		let r = unsafe { self.nodes.remove_at(self.root, addr).unwrap() };
+	pub unsafe fn remove_at(&mut self, addr: Address<S::Node>) -> Option<T> {
+		let r = unsafe { self.nodes.remove_at(self.root, addr) }?;
 		self.root = r.new_root;
 		self.len -= 1;
-		r.item
+		Some(r.item)
 	}
 
 	pub fn visit_from_leaves(&self, mut f: impl FnMut(S::Node)) {
