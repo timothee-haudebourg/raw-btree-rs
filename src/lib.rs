@@ -223,6 +223,19 @@ impl<T, S: Storage<T>> RawBTree<T, S> {
 		}
 	}
 
+	/// Removes the item at the given address and returns it.
+	///
+	/// # Safety
+	///
+	/// Target node must not have been deallocated.
+	#[inline]
+	pub unsafe fn remove_at<Q: ?Sized>(&mut self, addr: Address<S::Node>) -> T {
+		let r = unsafe { self.nodes.remove_at(self.root, addr).unwrap() };
+		self.root = r.new_root;
+		self.len -= 1;
+		r.item
+	}
+
 	pub fn visit_from_leaves(&self, mut f: impl FnMut(S::Node)) {
 		if let Some(id) = self.root {
 			let node = unsafe { self.nodes.get(id) };
