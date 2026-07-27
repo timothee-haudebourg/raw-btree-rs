@@ -18,6 +18,20 @@ impl<K, V> Item<K, V> {
 	{
 		self.key.borrow().cmp(key)
 	}
+
+	pub fn as_pair(&self) -> (&K, &V) {
+		(&self.key, &self.value)
+	}
+
+	pub fn into_pair(self) -> (K, V) {
+		(self.key, self.value)
+	}
+}
+
+impl<K, V> AsRef<Item<K, V>> for Item<K, V> {
+	fn as_ref(&self) -> &Self {
+		self
+	}
 }
 
 impl<K: PartialEq, V> PartialEq for Item<K, V> {

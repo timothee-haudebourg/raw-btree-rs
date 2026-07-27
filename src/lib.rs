@@ -5,7 +5,7 @@
 pub(crate) mod utils;
 
 pub mod node;
-pub use node::{Address, Node};
+pub use node::{Address, Node, Offset};
 use std::{cmp::Ordering, iter::FusedIterator, marker::PhantomData};
 
 mod balancing;
@@ -187,11 +187,220 @@ impl<T, S: Storage<T>> RawBTree<T, S> {
 			.and_then(|addr| unsafe { self.get_mut_at(addr) })
 	}
 
-	pub fn iter(&self) -> Iter<T, S> {
+	/// Returns the identifier of the root node, if any.
+	#[inline]
+	pub fn root(&self) -> Option<S::Node> {
+		self.root
+	}
+
+	/// Returns the address of the item located directly after the given
+	/// address, if any.
+	///
+	/// # Safety
+	///
+	/// The address's node must not have been deallocated.
+	#[inline]
+	pub unsafe fn next_item_address(&self, addr: Address<S::Node>) -> Option<Address<S::Node>> {
+		self.nodes.next_item_address(addr)
+	}
+
+	/// Returns the address of the item located directly before the given
+	/// address, if any.
+	///
+	/// # Safety
+	///
+	/// The address's node must not have been deallocated.
+	#[inline]
+	pub unsafe fn previous_item_address(&self, addr: Address<S::Node>) -> Option<Address<S::Node>> {
+		self.nodes.previous_item_address(addr)
+	}
+
+	/// Returns the front address directly preceding the given address, if
+	/// any.
+	///
+	/// # Safety
+	///
+	/// The address's node must not have been deallocated.
+	#[inline]
+	pub unsafe fn previous_front_address(
+		&self,
+		addr: Address<S::Node>,
+	) -> Option<Address<S::Node>> {
+		self.nodes.previous_front_address(addr)
+	}
+
+	/// Returns the back address directly following the given address, if
+	/// any.
+	///
+	/// # Safety
+	///
+	/// The address's node must not have been deallocated.
+	#[inline]
+	pub unsafe fn next_back_address(&self, addr: Address<S::Node>) -> Option<Address<S::Node>> {
+		self.nodes.next_back_address(addr)
+	}
+
+	/// Returns the item address, or back address, directly following the
+	/// given address, if any.
+	///
+	/// # Safety
+	///
+	/// The address's node must not have been deallocated.
+	#[inline]
+	pub unsafe fn next_item_or_back_address(
+		&self,
+		addr: Address<S::Node>,
+	) -> Option<Address<S::Node>> {
+		self.nodes.next_item_or_back_address(addr)
+	}
+
+	/// Normalizes the given address so that an out-of-node-bounds address
+	/// points to the next item.
+	///
+	/// # Safety
+	///
+	/// The address's node must not have been deallocated.
+	#[inline]
+	pub unsafe fn normalize(&self, addr: Address<S::Node>) -> Option<Address<S::Node>> {
+		self.nodes.normalize(addr)
+	}
+
+	/// Returns the greatest valid leaf address that directly precedes (or is)
+	/// the given address.
+	///
+	/// # Safety
+	///
+	/// The address's node must not have been deallocated.
+	#[inline]
+	pub unsafe fn leaf_address(&self, addr: Address<S::Node>) -> Address<S::Node> {
+		self.nodes.leaf_address(addr)
+	}
+
+	/// Inserts the given item at the given address.
+	///
+	/// The address is first converted into a leaf address using
+	/// [`Self::leaf_address`], and the item is inserted using
+	/// [`Self::insert_exactly_at`].
+	///
+	/// Returns the address of the inserted item, which may differ from the
+	/// input address if the tree gets rebalanced. `addr` may be `None` only if
+	/// the tree is empty.
+	///
+	/// # Correctness
+	///
+	/// It is assumed that it is btree-correct to insert the given item at the
+	/// given address.
+	///
+	/// # Safety
+	///
+	/// The address's node (if any) must not have been deallocated.
+	#[inline]
+	pub unsafe fn insert_at(
+		&mut self,
+		addr: Option<Address<S::Node>>,
+		item: T,
+	) -> Option<Address<S::Node>> {
+		let (root, addr) = self.nodes.insert_at(self.root, addr, item);
+		self.root = root;
+		self.len += 1;
+		addr
+	}
+
+	/// Inserts the given item exactly at the given **leaf** address.
+	///
+	/// If the address refers to an internal node, `opt_right_id` defines the
+	/// identifier of the child node inserted on the right of the inserted
+	/// item.
+	///
+	/// Returns the address of the inserted item, which may differ from the
+	/// input address if the tree gets rebalanced. `addr` may be `None` only
+	/// if the tree is empty.
+	///
+	/// # Correctness
+	///
+	/// It is assumed that it is btree-correct to insert the given item at the
+	/// given address.
+	///
+	/// # Panics
+	///
+	/// This function panics if the address refers to an internal node and
+	/// `opt_right_id` is `None`.
+	///
+	/// # Safety
+	///
+	/// The address's node (if any) must not have been deallocated.
+	#[inline]
+	pub unsafe fn insert_exactly_at(
+		&mut self,
+		addr: Option<Address<S::Node>>,
+		item: T,
+		opt_right_id: Option<S::Node>,
+	) -> Option<Address<S::Node>> {
+		let (root, addr) = self
+			.nodes
+			.insert_exactly_at(self.root, addr, item, opt_right_id);
+		self.root = root;
+		self.len += 1;
+		addr
+	}
+
+	/// Replaces the item located at the given address, returning the
+	/// previous item.
+	///
+	/// # Safety
+	///
+	/// The address's node must not have been deallocated.
+	#[inline]
+	pub unsafe fn replace_at(&mut self, addr: Address<S::Node>, item: T) -> T {
+		self.nodes.replace_at(addr, item)
+	}
+
+	/// Removes the item at the given address, if any.
+	///
+	/// If an item is removed, this function returns the removed item and the
+	/// updated address where an item could be reinserted to preserve the
+	/// tree's order, if any.
+	///
+	/// # Safety
+	///
+	/// The address's node must not have been deallocated.
+	#[inline]
+	pub unsafe fn remove_at(
+		&mut self,
+		addr: Address<S::Node>,
+	) -> Option<(T, Option<Address<S::Node>>)> {
+		self.nodes.remove_at(self.root, addr).map(|r| {
+			self.root = r.new_root;
+			self.len -= 1;
+			(r.item, r.new_addr)
+		})
+	}
+
+	/// Returns a reference to the node identified by `id`.
+	///
+	/// # Safety
+	///
+	/// `id` must not have been deallocated.
+	#[inline]
+	pub unsafe fn node(&self, id: S::Node) -> &Node<T, S> {
+		self.nodes.get(id)
+	}
+
+	/// Returns a mutable reference to the node identified by `id`.
+	///
+	/// # Safety
+	///
+	/// `id` must not have been deallocated.
+	#[inline]
+	pub unsafe fn node_mut(&mut self, id: S::Node) -> &mut Node<T, S> {
+		self.nodes.get_mut(id)
+	}
+
+	pub fn iter(&self) -> Iter<'_, T, S> {
 		Iter::new(self)
 	}
 
-	pub fn iter_mut(&mut self) -> IterMut<T, S> {
+	pub fn iter_mut(&mut self) -> IterMut<'_, T, S> {
 		IterMut::new(self)
 	}
 
@@ -221,19 +430,6 @@ impl<T, S: Storage<T>> RawBTree<T, S> {
 			}
 			Err(_) => None,
 		}
-	}
-
-	/// Removes the item at the given address and returns it.
-	///
-	/// # Safety
-	///
-	/// Target node must not have been deallocated.
-	#[inline]
-	pub unsafe fn remove_at(&mut self, addr: Address<S::Node>) -> Option<T> {
-		let r = unsafe { self.nodes.remove_at(self.root, addr) }?;
-		self.root = r.new_root;
-		self.len -= 1;
-		Some(r.item)
 	}
 
 	pub fn visit_from_leaves(&self, mut f: impl FnMut(S::Node)) {
