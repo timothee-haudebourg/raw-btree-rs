@@ -52,7 +52,7 @@ impl<T, S: Storage<T>> Leaf<T, S> {
 	}
 
 	#[inline]
-	pub fn iter(&self) -> std::slice::Iter<T> {
+	pub fn iter(&self) -> std::slice::Iter<'_, T> {
 		self.items.as_ref().iter()
 	}
 

@@ -475,7 +475,7 @@ impl<T, S: Storage<T>> Node<T, S> {
 	}
 
 	#[inline]
-	pub fn children(&self) -> Children<T, S> {
+	pub fn children(&self) -> Children<'_, T, S> {
 		match self {
 			Node::Leaf(_) => Children::Leaf,
 			Node::Internal(node) => node.children(),
@@ -483,7 +483,7 @@ impl<T, S: Storage<T>> Node<T, S> {
 	}
 
 	#[inline]
-	pub fn children_with_separators(&self) -> ChildrenWithSeparators<T, S> {
+	pub fn children_with_separators(&self) -> ChildrenWithSeparators<'_, T, S> {
 		match self {
 			Node::Leaf(_) => ChildrenWithSeparators::Leaf,
 			Node::Internal(node) => node.children_with_separators(),

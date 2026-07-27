@@ -117,7 +117,7 @@ impl<T, const N: usize> Array<T, N> {
 		}
 	}
 
-	pub fn drain(&mut self, range: impl RangeBounds<usize>) -> Drain<T, N> {
+	pub fn drain(&mut self, range: impl RangeBounds<usize>) -> Drain<'_, T, N> {
 		let start = match range.start_bound() {
 			Bound::Unbounded => 0,
 			Bound::Included(i) => *i,

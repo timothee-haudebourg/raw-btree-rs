@@ -261,12 +261,12 @@ impl<T, S: Storage<T>> Internal<T, S> {
 	}
 
 	#[inline]
-	pub fn children(&self) -> Children<T, S> {
+	pub fn children(&self) -> Children<'_, T, S> {
 		Children::Internal(Some(self.first_child), self.other_children.as_ref().iter())
 	}
 
 	#[inline]
-	pub fn children_with_separators(&self) -> ChildrenWithSeparators<T, S> {
+	pub fn children_with_separators(&self) -> ChildrenWithSeparators<'_, T, S> {
 		ChildrenWithSeparators::Internal(
 			Some(self.first_child),
 			None,
