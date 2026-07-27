@@ -1,14 +1,14 @@
 use rand::{rngs::SmallRng, seq::SliceRandom, SeedableRng};
 use raw_btree::{Item, RawBTree};
 
-const SEED: &'static [u8; 32] = b"testseedtestseedtestseedtestseed";
+const SEED: &[u8; 32] = b"testseedtestseedtestseedtestseed";
 
 #[test]
 pub fn insert() {
 	let mut btree: RawBTree<Item<usize, usize>> = RawBTree::new();
 
 	for (key, value) in &ITEMS {
-		if let Some(_) = btree.insert(Item::cmp, Item::new(*key, *value)) {
+		if btree.insert(Item::cmp, Item::new(*key, *value)).is_some() {
 			println!("duplicate: {}", key);
 		}
 
@@ -34,7 +34,7 @@ pub fn remove() {
 	items.shuffle(&mut rng);
 
 	for (i, (key, value)) in items.iter().enumerate() {
-		let item = btree.remove(Item::key_cmp, &key);
+		let item = btree.remove(Item::key_cmp, key);
 		assert_eq!(item, Some(Item::new(*key, *value)));
 		assert_eq!(btree.len(), 99 - i);
 		btree.validate(Item::cmp);

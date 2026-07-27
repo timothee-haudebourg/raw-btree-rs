@@ -473,10 +473,8 @@ impl<T, S: Storage<T>> Internal<T, S> {
 		T: std::fmt::Display,
 	{
 		write!(f, "<c0> |")?;
-		let mut i = 1;
-		for branch in &self.other_children {
-			write!(f, "{{{}|<c{}>}} |", branch.item, i)?;
-			i += 1;
+		for (i, branch) in self.other_children.iter().enumerate() {
+			write!(f, "{{{}|<c{}>}} |", branch.item, i + 1)?;
 		}
 
 		Ok(())
