@@ -255,12 +255,7 @@ impl<'a, T, const N: usize> Iterator for Drain<'a, T, N> {
 	type Item = T;
 
 	fn size_hint(&self) -> (usize, Option<usize>) {
-		let size = if self.front < self.back {
-			self.back - self.front
-		} else {
-			0
-		};
-
+		let size = self.back.saturating_sub(self.front);
 		(size, Some(size))
 	}
 
